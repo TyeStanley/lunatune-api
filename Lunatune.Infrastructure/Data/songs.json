@@ -1,0 +1,32 @@
+[
+  {
+    "title": "Pop Corporate",
+    "artist": "BlackTrendMusic",
+    "album": "Pop Corporate",
+    "genre": "Pop",
+    "durationMs": 118000,
+    "filePath": "pop-corporate.mp3",
+    "albumArtUrl": "https://example.com/pop_corporate_album.jpg",
+    "isFavorite": false
+  },
+  {
+    "title": "Abstract Beauty",
+    "artist": "BoDleasons",
+    "album": "Moments of Inspiration",
+    "genre": "Instrumental",
+    "durationMs": 79000,
+    "filePath": "abstract-beauty.mp3",
+    "albumArtUrl": "https://example.com/abstract_beauty_album.jpg",
+    "isFavorite": false
+  },
+  {
+    "title": "50 Berkeley Square",
+    "artist": "Nutmeg",
+    "album": "Ghosts (and Goolies)",
+    "genre": "Novelty",
+    "durationMs": 220000,
+    "filePath": "50-berkeley-square.mp3",
+    "albumArtUrl": "https://example.com/50_berkeley_square.jpg",
+    "isFavorite": false
+  }
+]
