@@ -14,7 +14,6 @@ public class Song
     public string? AlbumArtUrl { get; set; }
 
     // Basic user interaction
-    public bool IsFavorite { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 }
