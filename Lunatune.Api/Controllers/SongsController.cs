@@ -14,11 +14,15 @@ public class SongsController(ISongService songService, IFileStorageService fileS
     private readonly IFileStorageService _fileStorageService = fileStorageService;
 
     [HttpGet]
-    [AllowAnonymous]
-    public async Task<ActionResult<IEnumerable<Song>>> GetSongs()
+    public async Task<ActionResult<object>> GetSongs([FromQuery] string? searchTerm = null, [FromQuery] int page = 1)
     {
-        var songs = await _songService.GetAllSongsAsync();
-        return Ok(songs);
+        var (songs, totalPages) = await _songService.GetSongsAsync(searchTerm, page);
+
+        return Ok(new
+        {
+            songs,
+            totalPages
+        });
     }
 
     [HttpGet("{id}")]
