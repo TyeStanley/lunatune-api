@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lunatune.Infrastructure.Services;
 
-public class MusicService(ApplicationDbContext context) : IMusicService
+public class SongService(ApplicationDbContext context) : ISongService
 {
     private readonly ApplicationDbContext _context = context;
 

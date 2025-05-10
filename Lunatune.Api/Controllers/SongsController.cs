@@ -8,23 +8,23 @@ namespace Lunatune.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class SongsController(IMusicService musicService, IFileStorageService fileStorageService) : ControllerBase
+public class SongsController(ISongService songService, IFileStorageService fileStorageService) : ControllerBase
 {
-    private readonly IMusicService _musicService = musicService;
+    private readonly ISongService _songService = songService;
     private readonly IFileStorageService _fileStorageService = fileStorageService;
 
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<Song>>> GetSongs()
     {
-        var songs = await _musicService.GetAllSongsAsync();
+        var songs = await _songService.GetAllSongsAsync();
         return Ok(songs);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<Song>> GetSong(Guid id)
     {
-        var song = await _musicService.GetSongByIdAsync(id);
+        var song = await _songService.GetSongByIdAsync(id);
         if (song == null)
         {
             return NotFound();
@@ -36,7 +36,7 @@ public class SongsController(IMusicService musicService, IFileStorageService fil
     [HttpGet("{id}/stream")]
     public async Task<IActionResult> GetStreamUrl(Guid id)
     {
-        var song = await _musicService.GetSongByIdAsync(id);
+        var song = await _songService.GetSongByIdAsync(id);
         if (song == null)
         {
             return NotFound();
