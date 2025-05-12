@@ -16,8 +16,8 @@ public class SongService(ApplicationDbContext context) : ISongService
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             query = query.Where(s =>
-                s.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                s.Artist.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+                EF.Functions.ILike(s.Title, $"%{searchTerm}%") ||
+                EF.Functions.ILike(s.Artist, $"%{searchTerm}%"));
         }
 
         var totalCount = await query.CountAsync();

@@ -14,6 +14,7 @@ public class SongsController(ISongService songService, IFileStorageService fileS
     private readonly IFileStorageService _fileStorageService = fileStorageService;
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<object>> GetSongs([FromQuery] string? searchTerm = null, [FromQuery] int page = 1)
     {
         var (songs, totalPages) = await _songService.GetSongsAsync(searchTerm, page);
