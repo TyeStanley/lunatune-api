@@ -7,6 +7,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 {
     public DbSet<Song> Songs { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<SongLike> SongLikes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -59,6 +60,31 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
             entity.HasIndex(u => u.Auth0Id)
                 .IsUnique();
+        });
+
+        // SongLike entity
+        modelBuilder.Entity<SongLike>(entity =>
+        {
+            entity.Property(sl => sl.Id)
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(sl => sl.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            // Configure unique constraint for user-song combination
+            entity.HasIndex(sl => new { sl.UserId, sl.SongId })
+                .IsUnique();
+
+            // Configure relationships
+            entity.HasOne(sl => sl.User)
+                .WithMany(u => u.Likes)
+                .HasForeignKey(sl => sl.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(sl => sl.Song)
+                .WithMany(s => s.Likes)
+                .HasForeignKey(sl => sl.SongId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

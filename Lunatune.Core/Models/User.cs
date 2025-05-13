@@ -9,4 +9,7 @@ public class User
     public string? Picture { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
+
+    // Likes relationship
+    public ICollection<SongLike> Likes { get; set; } = [];
 }

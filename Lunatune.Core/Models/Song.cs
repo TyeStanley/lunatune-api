@@ -16,4 +16,7 @@ public class Song
     // Basic user interaction
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
+
+    // Likes relationship
+    public ICollection<SongLike> Likes { get; set; } = [];
 }

@@ -9,7 +9,7 @@ public class SongService(ApplicationDbContext context) : ISongService
 {
     private readonly ApplicationDbContext _context = context;
 
-    public async Task<(IEnumerable<Song> Songs, int TotalPages)> GetSongsAsync(string? searchTerm = null, int page = 1, int pageSize = 10)
+    public async Task<(IEnumerable<SongWithLikeInfo> Songs, int TotalPages)> GetSongsAsync(string? searchTerm = null, int page = 1, int pageSize = 10, Guid? userId = null)
     {
         var query = _context.Songs.AsQueryable();
 
@@ -26,6 +26,12 @@ public class SongService(ApplicationDbContext context) : ISongService
         var songs = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(s => new SongWithLikeInfo
+            {
+                Song = s,
+                IsLiked = userId.HasValue && s.Likes.Any(l => l.UserId == userId.Value),
+                LikeCount = s.Likes.Count
+            })
             .ToListAsync();
 
         return (songs, totalPages);
