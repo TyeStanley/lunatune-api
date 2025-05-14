@@ -28,7 +28,16 @@ public class SongService(ApplicationDbContext context) : ISongService
             .Take(pageSize)
             .Select(s => new SongWithLikeInfo
             {
-                Song = s,
+                Id = s.Id,
+                Title = s.Title,
+                Artist = s.Artist,
+                Album = s.Album,
+                Genre = s.Genre,
+                FilePath = s.FilePath,
+                DurationMs = s.DurationMs,
+                AlbumArtUrl = s.AlbumArtUrl,
+                CreatedAt = s.CreatedAt,
+                UpdatedAt = s.UpdatedAt,
                 IsLiked = userId.HasValue && s.Likes.Any(l => l.UserId == userId.Value),
                 LikeCount = s.Likes.Count
             })
