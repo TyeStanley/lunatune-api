@@ -22,10 +22,10 @@ public class SongsController(
 
     /// Gets a paginated list of songs with optional search term
     [HttpGet]
-    public async Task<ActionResult<object>> GetSongs([FromQuery] string? searchTerm = null, [FromQuery] int page = 1)
+    public async Task<ActionResult<object>> GetSongs([FromQuery] string? searchTerm = null, [FromQuery] int page = 1, [FromQuery] string? sortBy = null)
     {
         var userId = await GetCurrentUserId();
-        var (songs, totalPages) = await _songService.GetSongsAsync(searchTerm, page, userId: userId);
+        var (songs, totalPages) = await _songService.GetSongsAsync(searchTerm, page, userId: userId, sortBy: sortBy);
 
         return Ok(new
         {
@@ -39,24 +39,21 @@ public class SongsController(
     public async Task<ActionResult<object>> GetPopularSongs([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var userId = await GetCurrentUserId();
-        var (songs, totalPages) = await _songService.GetSongsAsync(null, page, pageSize, userId);
-        var sortedSongs = songs
-            .Where(s => s.LikeCount > 0)
-            .OrderByDescending(s => s.LikeCount)
-            .ToList();
+        var (songs, totalPages) = await _songService.GetSongsAsync(null, page, pageSize, userId, sortBy: "popular");
 
         return Ok(new
         {
-            songs = sortedSongs,
+            songs,
             totalPages
         });
     }
 
     /// Gets a specific song by its ID
     [HttpGet("{id}")]
-    public async Task<ActionResult<Song>> GetSong(Guid id)
+    public async Task<ActionResult<SongWithLikeInfo>> GetSong(Guid id)
     {
-        var song = await _songService.GetSongByIdAsync(id);
+        var userId = await GetCurrentUserId();
+        var song = await _songService.GetSongByIdAsync(id, userId);
         if (song == null)
         {
             return NotFound();
@@ -69,7 +66,8 @@ public class SongsController(
     [HttpGet("{id}/stream")]
     public async Task<IActionResult> GetStreamUrl(Guid id)
     {
-        var song = await _songService.GetSongByIdAsync(id);
+        var userId = await GetCurrentUserId();
+        var song = await _songService.GetSongByIdAsync(id, userId);
         if (song == null)
         {
             return NotFound();
@@ -99,7 +97,7 @@ public class SongsController(
             return Unauthorized();
         }
 
-        var song = await _songService.GetSongByIdAsync(id);
+        var song = await _songService.GetSongByIdAsync(id, userId);
         if (song == null)
         {
             return NotFound();
@@ -124,7 +122,7 @@ public class SongsController(
             return Unauthorized();
         }
 
-        var song = await _songService.GetSongByIdAsync(id);
+        var song = await _songService.GetSongByIdAsync(id, userId);
         if (song == null)
         {
             return NotFound();
@@ -149,33 +147,32 @@ public class SongsController(
             return Unauthorized();
         }
 
-        var song = await _songService.GetSongByIdAsync(id);
+        var song = await _songService.GetSongByIdAsync(id, userId);
         if (song == null)
         {
             return NotFound();
         }
 
-        var isLiked = await _songLikeService.IsSongLikedByUserAsync(userId.Value, id);
-        return Ok(new { isLiked });
+        return Ok(new { isLiked = song.IsLiked });
     }
 
     /// Gets the total number of likes for a specific song
     [HttpGet("{id}/likes")]
     public async Task<IActionResult> GetLikeCount(Guid id)
     {
-        var song = await _songService.GetSongByIdAsync(id);
+        var userId = await GetCurrentUserId();
+        var song = await _songService.GetSongByIdAsync(id, userId);
         if (song == null)
         {
             return NotFound();
         }
 
-        var likeCount = await _songLikeService.GetSongLikeCountAsync(id);
-        return Ok(new { likeCount });
+        return Ok(new { likeCount = song.LikeCount });
     }
 
     /// Gets all songs that the current user has liked
     [HttpGet("liked")]
-    public async Task<IActionResult> GetLikedSongs()
+    public async Task<ActionResult<object>> GetLikedSongs([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var userId = await GetCurrentUserId();
         if (userId == null)
@@ -183,8 +180,12 @@ public class SongsController(
             return Unauthorized();
         }
 
-        var likedSongs = await _songLikeService.GetUserLikedSongsAsync(userId.Value);
-        return Ok(likedSongs);
+        var (songs, totalPages) = await _songService.GetSongsAsync(null, page, pageSize, userId, sortBy: "liked");
+        return Ok(new
+        {
+            songs,
+            totalPages
+        });
     }
 
     private async Task<Guid?> GetCurrentUserId()

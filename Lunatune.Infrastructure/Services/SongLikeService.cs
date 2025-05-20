@@ -52,13 +52,4 @@ public class SongLikeService(ApplicationDbContext context) : ISongLikeService
     return await _context.SongLikes
         .CountAsync(l => l.SongId == songId);
   }
-
-  public async Task<IEnumerable<Song>> GetUserLikedSongsAsync(Guid userId)
-  {
-    return await _context.SongLikes
-        .Where(l => l.UserId == userId)
-        .Include(l => l.Song)
-        .Select(l => l.Song)
-        .ToListAsync();
-  }
 }
