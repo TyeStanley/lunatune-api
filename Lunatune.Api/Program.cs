@@ -38,6 +38,7 @@ builder.Services.AddScoped<ISongService, SongService>();
 builder.Services.AddScoped<IFileStorageService, AzureBlobStorageService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ISongLikeService, SongLikeService>();
+builder.Services.AddScoped<IPlaylistService, PlaylistService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
