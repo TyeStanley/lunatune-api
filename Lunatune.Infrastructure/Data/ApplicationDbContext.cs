@@ -8,6 +8,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Song> Songs { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<SongLike> SongLikes { get; set; }
+    public DbSet<Playlist> Playlists { get; set; }
+    public DbSet<PlaylistSong> PlaylistSongs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -84,6 +86,54 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasOne(sl => sl.Song)
                 .WithMany(s => s.Likes)
                 .HasForeignKey(sl => sl.SongId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Playlist entity
+        modelBuilder.Entity<Playlist>(entity =>
+        {
+            entity.Property(p => p.Id)
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(p => p.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.Property(p => p.Name)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.Property(p => p.Description)
+                .HasMaxLength(500);
+
+            // Configure relationships
+            entity.HasOne(p => p.User)
+                .WithMany(u => u.Playlists)
+                .HasForeignKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // PlaylistSong entity
+        modelBuilder.Entity<PlaylistSong>(entity =>
+        {
+            entity.Property(ps => ps.Id)
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(ps => ps.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            // Configure unique constraint for playlist-song combination
+            entity.HasIndex(ps => new { ps.PlaylistId, ps.SongId })
+                .IsUnique();
+
+            // Configure relationships
+            entity.HasOne(ps => ps.Playlist)
+                .WithMany(p => p.Songs)
+                .HasForeignKey(ps => ps.PlaylistId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ps => ps.Song)
+                .WithMany()
+                .HasForeignKey(ps => ps.SongId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

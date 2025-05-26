@@ -12,4 +12,7 @@ public class User
 
     // Likes relationship
     public ICollection<SongLike> Likes { get; set; } = [];
+
+    // Navigation properties
+    public ICollection<Playlist> Playlists { get; set; } = [];
 }

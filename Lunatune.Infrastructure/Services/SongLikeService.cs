@@ -5,9 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lunatune.Infrastructure.Services;
 
-public class SongLikeService(ApplicationDbContext context) : ISongLikeService
+public class SongLikeService(ApplicationDbContext context, IPlaylistService playlistService) : ISongLikeService
 {
   private readonly ApplicationDbContext _context = context;
+  private readonly IPlaylistService _playlistService = playlistService;
 
   public async Task<bool> LikeSongAsync(Guid userId, Guid songId)
   {
@@ -25,6 +26,11 @@ public class SongLikeService(ApplicationDbContext context) : ISongLikeService
 
     _context.SongLikes.Add(like);
     await _context.SaveChangesAsync();
+
+    // Add to Liked Songs playlist
+    var likedSongsPlaylist = await _playlistService.GetOrCreateLikedSongsPlaylistAsync(userId);
+    await _playlistService.AddSongToPlaylistAsync(likedSongsPlaylist.Id, songId, userId);
+
     return true;
   }
 
@@ -38,6 +44,11 @@ public class SongLikeService(ApplicationDbContext context) : ISongLikeService
 
     _context.SongLikes.Remove(like);
     await _context.SaveChangesAsync();
+
+    // Remove from Liked Songs playlist
+    var likedSongsPlaylist = await _playlistService.GetOrCreateLikedSongsPlaylistAsync(userId);
+    await _playlistService.RemoveSongFromPlaylistAsync(likedSongsPlaylist.Id, songId, userId);
+
     return true;
   }
 
