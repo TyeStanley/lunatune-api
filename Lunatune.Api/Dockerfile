@@ -20,10 +20,8 @@ RUN apt-get update \
     clang zlib1g-dev
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Lunatune.Api.csproj", "."]
-RUN dotnet restore "./Lunatune.Api.csproj"
 COPY . .
-WORKDIR "/src/Lunatune.Api"
+RUN dotnet restore "./Lunatune.Api.csproj"
 RUN dotnet build "./Lunatune.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
