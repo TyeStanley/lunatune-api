@@ -20,8 +20,8 @@ RUN apt-get update \
     clang zlib1g-dev
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Lunatune.Api/Lunatune.Api.csproj", "Lunatune.Api/"]
-RUN dotnet restore "./Lunatune.Api/Lunatune.Api.csproj"
+COPY ["Lunatune.Api.csproj", "."]
+RUN dotnet restore "./Lunatune.Api.csproj"
 COPY . .
 WORKDIR "/src/Lunatune.Api"
 RUN dotnet build "./Lunatune.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
