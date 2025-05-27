@@ -15,10 +15,13 @@ public class AzureBlobStorageService : IFileStorageService
     public AzureBlobStorageService(IConfiguration configuration)
     {
         _configuration = configuration;
+
         _connectionString = configuration.GetConnectionString("AzureStorage")
-            ?? throw new ArgumentNullException("AzureStorage connection string is not configured");
+            ?? throw new ArgumentNullException(nameof(configuration), "AzureStorage connection string is not configured");
+
         _containerName = configuration["AzureStorage:ContainerName"]
-            ?? throw new ArgumentNullException("AzureStorage container name is not configured");
+            ?? throw new ArgumentNullException(nameof(configuration), "AzureStorage container name is not configured");
+
         _blobServiceClient = new BlobServiceClient(_connectionString);
     }
 

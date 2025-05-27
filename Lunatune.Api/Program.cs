@@ -6,8 +6,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using Lunatune.Api.Middleware;
+using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var env = builder.Environment.EnvironmentName;
+Console.WriteLine($"Running in {env} environment");
 
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.ConfigureKestrel(options =>
@@ -33,9 +37,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var configuration = builder.Configuration;
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(
-        "User Id=postgres.wgbrhcbltzxdujjrhkgp;Password=mWsQTiapj1OOZgy9;Server=aws-0-us-west-1.pooler.supabase.com;Port=5432;Database=postgres",
+        configuration.GetConnectionString("DefaultConnection"),
         npgsqlOptions => npgsqlOptions.MigrationsAssembly("Lunatune.Infrastructure")
     )
 );
@@ -46,13 +52,26 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ISongLikeService, SongLikeService>();
 builder.Services.AddScoped<IPlaylistService, PlaylistService>();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.Authority = "https://dev-xtldi0geo2fqomh7.us.auth0.com/";
-        options.Audience = "https://lunatune-api";
-        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-    });
+// If we're in production, use Auth0 authentication
+if (builder.Environment.IsProduction())
+{
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+            options.Authority = configuration["Auth0:Domain"];
+            options.Audience = configuration["Auth0:Audience"];
+            options.RequireHttpsMetadata = true;
+        });
+    builder.Services.AddAuthorization();
+}
+// In development, add a dummy authentication scheme that always succeeds
+else
+{
+    builder.Services.AddAuthentication("AllowAll")
+        .AddScheme<AuthenticationSchemeOptions, AllowAllAuthenticationHandler>("AllowAll", null);
+    builder.Services.AddAuthorizationBuilder()
+        .AddPolicy("AllowAll", policy => policy.RequireAssertion(_ => true));
+}
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -84,8 +103,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseHsts();
+}
 
-app.UseHttpsRedirection();
+if (app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseRouting();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();

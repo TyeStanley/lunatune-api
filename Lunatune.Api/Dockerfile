@@ -11,7 +11,6 @@ USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 
-
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 # Install clang/zlib1g-dev dependencies for publishing to native
@@ -21,9 +20,7 @@ RUN apt-get update \
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Lunatune.Api/Lunatune.Api.csproj", "Lunatune.Api/"]
-COPY ["Lunatune.Core/Lunatune.Core.csproj", "Lunatune.Core/"]
-COPY ["Lunatune.Infrastructure/Lunatune.Infrastructure.csproj", "Lunatune.Infrastructure/"]
-RUN dotnet restore "./Lunatune.Api.csproj"
+RUN dotnet restore "./Lunatune.Api/Lunatune.Api.csproj"
 COPY . .
 WORKDIR "/src/Lunatune.Api"
 RUN dotnet build "./Lunatune.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
@@ -43,7 +40,7 @@ RUN apt-get update \
 USER app
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
-FROM ${FINAL_BASE_IMAGE:-mcr.microsoft.com/dotnet/runtime-deps:8.0} AS final
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 EXPOSE 8080
 COPY --from=publish /app/publish .
