@@ -1,0 +1,23 @@
+{
+  "name": "lunatune-api-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "migrate": "dotnet ef database update --project Lunatune.Infrastructure",
+    "docker:build": "docker build -f Lunatune.Api/Dockerfile -t lunatune-api .",
+    "docker:run": "docker run --env-file .env -p 8080:8080 lunatune-api",
+    "docker:dev": "docker run --env-file .env -e ASPNETCORE_ENVIRONMENT=Development -p 8080:8080 lunatune-api"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TyeStanley/lunatune-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TyeStanley/lunatune-api/issues"
+  },
+  "homepage": "https://github.com/TyeStanley/lunatune-api#readme",
+  "description": ""
+}
