@@ -13,7 +13,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
   public async Task<Playlist> GetOrCreateLikedSongsPlaylistAsync(Guid userId)
   {
     var likedSongsPlaylist = await _context.Playlists
-        .FirstOrDefaultAsync(p => p.UserId == userId && p.Name == LIKED_SONGS_PLAYLIST_NAME);
+        .FirstOrDefaultAsync(p => p.CreatorId == userId && p.Name == LIKED_SONGS_PLAYLIST_NAME);
 
     if (likedSongsPlaylist != null)
       return likedSongsPlaylist;
@@ -23,7 +23,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     {
       Name = LIKED_SONGS_PLAYLIST_NAME,
       Description = "Your liked songs",
-      UserId = userId
+      CreatorId = userId
     };
 
     _context.Playlists.Add(likedSongsPlaylist);
@@ -38,7 +38,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     {
       Name = name,
       Description = description,
-      UserId = userId
+      CreatorId = userId
     };
 
     _context.Playlists.Add(playlist);
@@ -52,7 +52,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     return await _context.Playlists
         .Include(p => p.Songs)
             .ThenInclude(ps => ps.Song)
-        .FirstOrDefaultAsync(p => p.Id == playlistId && p.UserId == userId);
+        .FirstOrDefaultAsync(p => p.Id == playlistId && p.CreatorId == userId);
   }
 
   public async Task<IEnumerable<Playlist>> GetUserPlaylistsAsync(Guid userId)
@@ -60,7 +60,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     return await _context.Playlists
         .Include(p => p.Songs)
             .ThenInclude(ps => ps.Song)
-        .Where(p => p.UserId == userId)
+        .Where(p => p.CreatorId == userId)
         .OrderBy(p => p.Name)
         .ToListAsync();
   }
@@ -68,7 +68,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
   public async Task<bool> AddSongToPlaylistAsync(Guid playlistId, Guid songId, Guid userId)
   {
     var playlist = await _context.Playlists
-        .FirstOrDefaultAsync(p => p.Id == playlistId && p.UserId == userId);
+        .FirstOrDefaultAsync(p => p.Id == playlistId && p.CreatorId == userId);
 
     if (playlist == null)
       return false;
@@ -102,7 +102,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
   {
     var playlistSong = await _context.PlaylistSongs
         .Include(ps => ps.Playlist)
-        .FirstOrDefaultAsync(ps => ps.PlaylistId == playlistId && ps.SongId == songId && ps.Playlist.UserId == userId);
+        .FirstOrDefaultAsync(ps => ps.PlaylistId == playlistId && ps.SongId == songId && ps.Playlist.CreatorId == userId);
 
     if (playlistSong == null)
       return false;
@@ -116,7 +116,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
   public async Task<bool> DeletePlaylistAsync(Guid playlistId, Guid userId)
   {
     var playlist = await _context.Playlists
-        .FirstOrDefaultAsync(p => p.Id == playlistId && p.UserId == userId);
+        .FirstOrDefaultAsync(p => p.Id == playlistId && p.CreatorId == userId);
 
     if (playlist == null)
       return false;

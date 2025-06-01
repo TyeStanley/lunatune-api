@@ -14,5 +14,6 @@ public class User
     public ICollection<SongLike> Likes { get; set; } = [];
 
     // Navigation properties
-    public ICollection<Playlist> Playlists { get; set; } = [];
+    public ICollection<Playlist> CreatedPlaylists { get; set; } = [];
+    public ICollection<UserLibraryPlaylist> LibraryPlaylists { get; set; } = [];
 }
