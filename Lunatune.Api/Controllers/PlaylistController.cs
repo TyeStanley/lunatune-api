@@ -71,7 +71,7 @@ public class PlaylistController(IPlaylistService playlistService, IUserService u
     }
 
     var playlist = await _playlistService.CreatePlaylistAsync(userId.Value, request.Name, request.Description);
-    return CreatedAtAction(nameof(GetPlaylist), new { id = playlist.Id }, playlist);
+    return Ok(playlist);
   }
 
   // Add a song to a playlist
