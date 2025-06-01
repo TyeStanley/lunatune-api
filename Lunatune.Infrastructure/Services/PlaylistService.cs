@@ -77,9 +77,32 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
   // Get all playlists for a user (without songs)
   public async Task<IEnumerable<PlaylistWithUserInfo>> GetUserPlaylistsAsync(Guid userId, string? searchTerm = null)
   {
+    // Determine if Liked Songs should be included
+    bool includeLikedSongs = string.IsNullOrWhiteSpace(searchTerm) ||
+        LIKED_SONGS_PLAYLIST_NAME.Contains(searchTerm!.Trim(), StringComparison.OrdinalIgnoreCase) ||
+        searchTerm.Trim().Contains(LIKED_SONGS_PLAYLIST_NAME, StringComparison.OrdinalIgnoreCase);
+
+    PlaylistWithUserInfo? likedSongsDto = null;
+    if (includeLikedSongs)
+    {
+      var likedSongsPlaylist = await GetOrCreateLikedSongsPlaylistAsync(userId);
+      likedSongsDto = new PlaylistWithUserInfo
+      {
+        Id = likedSongsPlaylist.Id,
+        Name = likedSongsPlaylist.Name,
+        Description = likedSongsPlaylist.Description,
+        CreatorId = likedSongsPlaylist.CreatorId,
+        CreatedAt = likedSongsPlaylist.CreatedAt,
+        UpdatedAt = likedSongsPlaylist.UpdatedAt,
+        IsCreator = true,
+        Creator = await _context.Users.FirstAsync(u => u.Id == userId)
+      };
+    }
+
     var query = _context.Playlists
         .Include(p => p.Creator)
-        .Where(p => p.CreatorId == userId || p.LibraryEntries.Any(le => le.UserId == userId));
+        .Where(p => p.CreatorId == userId || p.LibraryEntries.Any(le => le.UserId == userId))
+        .Where(p => p.Name != LIKED_SONGS_PLAYLIST_NAME);
 
     if (!string.IsNullOrWhiteSpace(searchTerm))
     {
@@ -102,6 +125,9 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
         })
         .ToListAsync();
 
+    // Prepend the Liked Songs playlist if it should be included
+    if (likedSongsDto != null)
+      playlists.Insert(0, likedSongsDto);
     return playlists;
   }
 
