@@ -9,16 +9,22 @@ namespace Lunatune.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class PlaylistController(IPlaylistService playlistService) : ControllerBase
+public class PlaylistController(IPlaylistService playlistService, IUserService userService) : ControllerBase
 {
   private readonly IPlaylistService _playlistService = playlistService;
+  private readonly IUserService _userService = userService;
 
   // Gets user playlists has filtering
   [HttpGet]
   public async Task<ActionResult<IEnumerable<PlaylistWithUserInfo>>> GetUserPlaylists([FromQuery] string? searchTerm = null)
   {
-    var userId = GetUserId();
-    var playlists = await _playlistService.GetUserPlaylistsAsync(userId, searchTerm);
+    var userId = await GetUserId();
+    if (userId == null)
+    {
+      return Unauthorized();
+    }
+
+    var playlists = await _playlistService.GetUserPlaylistsAsync(userId.Value, searchTerm);
     return Ok(playlists);
   }
 
@@ -26,8 +32,13 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
   [HttpGet("all")]
   public async Task<ActionResult<object>> GetAllPlaylists([FromQuery] string? searchTerm = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
   {
-    var userId = GetUserId();
-    var (playlists, totalPages) = await _playlistService.GetAllPlaylistsAsync(searchTerm, page, pageSize, userId);
+    var userId = await GetUserId();
+    if (userId == null)
+    {
+      return Unauthorized();
+    }
+
+    var (playlists, totalPages) = await _playlistService.GetAllPlaylistsAsync(searchTerm, page, pageSize, userId.Value);
     return Ok(new { playlists, totalPages });
   }
 
@@ -35,8 +46,13 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
   [HttpGet("{id}")]
   public async Task<ActionResult<PlaylistWithUserInfo>> GetPlaylist(Guid id)
   {
-    var userId = GetUserId();
-    var playlist = await _playlistService.GetPlaylistByIdAsync(id, userId);
+    var userId = await GetUserId();
+    if (userId == null)
+    {
+      return Unauthorized();
+    }
+
+    var playlist = await _playlistService.GetPlaylistByIdAsync(id, userId.Value);
 
     if (playlist == null)
       return NotFound();
@@ -48,8 +64,13 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
   [HttpPost]
   public async Task<ActionResult<Playlist>> CreatePlaylist([FromBody] CreatePlaylistRequest request)
   {
-    var userId = GetUserId();
-    var playlist = await _playlistService.CreatePlaylistAsync(userId, request.Name, request.Description);
+    var userId = await GetUserId();
+    if (userId == null)
+    {
+      return Unauthorized();
+    }
+
+    var playlist = await _playlistService.CreatePlaylistAsync(userId.Value, request.Name, request.Description);
     return CreatedAtAction(nameof(GetPlaylist), new { id = playlist.Id }, playlist);
   }
 
@@ -57,8 +78,13 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
   [HttpPost("{playlistId}/songs/{songId}")]
   public async Task<ActionResult> AddSongToPlaylist(Guid playlistId, Guid songId)
   {
-    var userId = GetUserId();
-    var success = await _playlistService.AddSongToPlaylistAsync(playlistId, songId, userId);
+    var userId = await GetUserId();
+    if (userId == null)
+    {
+      return Unauthorized();
+    }
+
+    var success = await _playlistService.AddSongToPlaylistAsync(playlistId, songId, userId.Value);
 
     if (!success)
       return NotFound();
@@ -70,8 +96,13 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
   [HttpDelete("{playlistId}/songs/{songId}")]
   public async Task<ActionResult> RemoveSongFromPlaylist(Guid playlistId, Guid songId)
   {
-    var userId = GetUserId();
-    var success = await _playlistService.RemoveSongFromPlaylistAsync(playlistId, songId, userId);
+    var userId = await GetUserId();
+    if (userId == null)
+    {
+      return Unauthorized();
+    }
+
+    var success = await _playlistService.RemoveSongFromPlaylistAsync(playlistId, songId, userId.Value);
 
     if (!success)
       return NotFound();
@@ -83,8 +114,13 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
   [HttpDelete("{id}")]
   public async Task<ActionResult> DeletePlaylist(Guid id)
   {
-    var userId = GetUserId();
-    var success = await _playlistService.DeletePlaylistAsync(id, userId);
+    var userId = await GetUserId();
+    if (userId == null)
+    {
+      return Unauthorized();
+    }
+
+    var success = await _playlistService.DeletePlaylistAsync(id, userId.Value);
 
     if (!success)
       return NotFound();
@@ -96,8 +132,13 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
   [HttpPost("{playlistId}/library")]
   public async Task<ActionResult> AddPlaylistToLibrary(Guid playlistId)
   {
-    var userId = GetUserId();
-    var success = await _playlistService.AddPlaylistToLibraryAsync(playlistId, userId);
+    var userId = await GetUserId();
+    if (userId == null)
+    {
+      return Unauthorized();
+    }
+
+    var success = await _playlistService.AddPlaylistToLibraryAsync(playlistId, userId.Value);
     if (!success)
       return NotFound();
     return NoContent();
@@ -107,8 +148,13 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
   [HttpDelete("{playlistId}/library")]
   public async Task<ActionResult> RemovePlaylistFromLibrary(Guid playlistId)
   {
-    var userId = GetUserId();
-    var success = await _playlistService.RemovePlaylistFromLibraryAsync(playlistId, userId);
+    var userId = await GetUserId();
+    if (userId == null)
+    {
+      return Unauthorized();
+    }
+
+    var success = await _playlistService.RemovePlaylistFromLibraryAsync(playlistId, userId.Value);
     if (!success)
       return NotFound();
     return NoContent();
@@ -118,16 +164,27 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
   [HttpGet("liked")]
   public async Task<ActionResult<Playlist>> GetOrCreateLikedSongsPlaylist()
   {
-    var userId = GetUserId();
-    var playlist = await _playlistService.GetOrCreateLikedSongsPlaylistAsync(userId);
+    var userId = await GetUserId();
+    if (userId == null)
+    {
+      return Unauthorized();
+    }
+
+    var playlist = await _playlistService.GetOrCreateLikedSongsPlaylistAsync(userId.Value);
+
     return Ok(playlist);
   }
 
-  private Guid GetUserId()
+  private async Task<Guid?> GetUserId()
   {
-    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-        ?? throw new UnauthorizedAccessException("User ID not found in token");
-    return Guid.Parse(userIdClaim);
+    var auth0Id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(auth0Id))
+    {
+      return null;
+    }
+
+    var user = await _userService.GetUserByAuth0IdAsync(auth0Id);
+    return user?.Id;
   }
 }
 

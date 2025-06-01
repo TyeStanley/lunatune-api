@@ -70,7 +70,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
       CreatedAt = playlist.CreatedAt,
       UpdatedAt = playlist.UpdatedAt,
       IsCreator = userId.HasValue && playlist.CreatorId == userId.Value,
-      Creator = playlist.Creator
+      Creator = new CreatorInfoDto { Name = playlist.Creator.Name }
     };
   }
 
@@ -86,6 +86,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     if (includeLikedSongs)
     {
       var likedSongsPlaylist = await GetOrCreateLikedSongsPlaylistAsync(userId);
+      var user = await _context.Users.AsNoTracking().FirstAsync(u => u.Id == userId);
       likedSongsDto = new PlaylistWithUserInfo
       {
         Id = likedSongsPlaylist.Id,
@@ -95,7 +96,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
         CreatedAt = likedSongsPlaylist.CreatedAt,
         UpdatedAt = likedSongsPlaylist.UpdatedAt,
         IsCreator = true,
-        Creator = await _context.Users.FirstAsync(u => u.Id == userId)
+        Creator = new CreatorInfoDto { Name = user.Name }
       };
     }
 
@@ -121,7 +122,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
           CreatedAt = p.CreatedAt,
           UpdatedAt = p.UpdatedAt,
           IsCreator = p.CreatorId == userId,
-          Creator = p.Creator
+          Creator = new CreatorInfoDto { Name = p.Creator.Name }
         })
         .ToListAsync();
 
@@ -160,7 +161,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
           CreatedAt = p.CreatedAt,
           UpdatedAt = p.UpdatedAt,
           IsCreator = userId.HasValue && p.CreatorId == userId.Value,
-          Creator = p.Creator
+          Creator = new CreatorInfoDto { Name = p.Creator.Name }
         })
         .ToListAsync();
 

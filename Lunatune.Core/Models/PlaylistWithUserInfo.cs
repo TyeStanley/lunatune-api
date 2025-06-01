@@ -11,5 +11,5 @@ public class PlaylistWithUserInfo
   public bool IsCreator { get; set; }
 
   // Navigation properties
-  public User Creator { get; set; } = null!;
+  public CreatorInfoDto? Creator { get; set; }
 }
