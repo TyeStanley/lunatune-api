@@ -50,7 +50,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
   }
 
   // Get a playlist by ID
-  public async Task<PlaylistWithUserInfo?> GetPlaylistByIdAsync(Guid playlistId, Guid? userId = null)
+  public async Task<PlaylistWithSongDto?> GetPlaylistByIdAsync(Guid playlistId, Guid? userId = null)
   {
     var playlist = await _context.Playlists
         .Include(p => p.Songs)
@@ -61,16 +61,17 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     if (playlist == null)
       return null;
 
-    return new PlaylistWithUserInfo
+    return new PlaylistWithSongDto
     {
       Id = playlist.Id,
       Name = playlist.Name,
       Description = playlist.Description,
       CreatorId = playlist.CreatorId,
       CreatedAt = playlist.CreatedAt,
-      UpdatedAt = playlist.UpdatedAt,
+      UpdatedAt = playlist.UpdatedAt ?? playlist.CreatedAt,
       IsCreator = userId.HasValue && playlist.CreatorId == userId.Value,
-      Creator = new CreatorInfoDto { Name = playlist.Creator.Name }
+      Creator = new CreatorInfoDto { Name = playlist.Creator.Name },
+      Songs = playlist.Songs.Select(ps => ps.Song).ToList()
     };
   }
 
@@ -275,5 +276,24 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     await _context.SaveChangesAsync();
 
     return true;
+  }
+
+  // Edit a playlist
+  public async Task<Playlist?> EditPlaylistAsync(Guid playlistId, string? name, string? description, Guid userId)
+  {
+    var playlist = await _context.Playlists
+        .FirstOrDefaultAsync(p => p.Id == playlistId && p.CreatorId == userId);
+
+    if (playlist == null)
+      return null;
+
+    if (name != null && name != playlist.Name)
+      playlist.Name = name;
+
+    if (description != null && description != playlist.Description)
+      playlist.Description = description;
+
+    await _context.SaveChangesAsync();
+    return playlist;
   }
 }

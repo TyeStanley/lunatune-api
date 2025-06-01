@@ -27,7 +27,7 @@ builder.Services.AddCors(options =>
                 "http://localhost:3000",
                 "https://lunatune-app.vercel.app"
             )
-            .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+            .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
             .WithHeaders("Authorization", "Content-Type", "Accept")
             .AllowCredentials()
     );

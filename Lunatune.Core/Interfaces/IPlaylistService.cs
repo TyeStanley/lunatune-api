@@ -6,7 +6,7 @@ public interface IPlaylistService
 {
   Task<Playlist> GetOrCreateLikedSongsPlaylistAsync(Guid userId);
   Task<Playlist> CreatePlaylistAsync(Guid userId, string name, string? description = null);
-  Task<PlaylistWithUserInfo?> GetPlaylistByIdAsync(Guid playlistId, Guid? userId = null);
+  Task<PlaylistWithSongDto?> GetPlaylistByIdAsync(Guid playlistId, Guid? userId = null);
   Task<IEnumerable<PlaylistWithUserInfo>> GetUserPlaylistsAsync(Guid userId, string? searchTerm = null);
   Task<(IEnumerable<PlaylistWithUserInfo> Playlists, int TotalPages)> GetAllPlaylistsAsync(string? searchTerm = null, int page = 1, int pageSize = 10, Guid? userId = null);
   Task<bool> AddSongToPlaylistAsync(Guid playlistId, Guid songId, Guid userId);
@@ -14,4 +14,5 @@ public interface IPlaylistService
   Task<bool> DeletePlaylistAsync(Guid playlistId, Guid userId);
   Task<bool> AddPlaylistToLibraryAsync(Guid playlistId, Guid userId);
   Task<bool> RemovePlaylistFromLibraryAsync(Guid playlistId, Guid userId);
+  Task<Playlist?> EditPlaylistAsync(Guid playlistId, string? name, string? description, Guid userId);
 }

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Lunatune.Core.Interfaces;
 using Lunatune.Core.Models;
 using System.Security.Claims;
-
+using System.Text.Json;
 namespace Lunatune.Api.Controllers;
 
 [ApiController]
@@ -175,6 +175,24 @@ public class PlaylistController(IPlaylistService playlistService, IUserService u
     return Ok(playlist);
   }
 
+  // Edit a playlist
+  [HttpPatch("{id}")]
+  public async Task<ActionResult<Playlist>> EditPlaylist(Guid id, [FromBody] EditPlaylistRequest request)
+  {
+    var userId = await GetUserId();
+    if (userId == null)
+    {
+      return Unauthorized();
+    }
+
+    var playlist = await _playlistService.EditPlaylistAsync(id, request.Name, request.Description, userId.Value);
+
+    if (playlist == null)
+      return NotFound();
+
+    return Ok(playlist);
+  }
+
   private async Task<Guid?> GetUserId()
   {
     var auth0Id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -191,5 +209,11 @@ public class PlaylistController(IPlaylistService playlistService, IUserService u
 public class CreatePlaylistRequest
 {
   public required string Name { get; set; }
+  public string? Description { get; set; }
+}
+
+public class EditPlaylistRequest
+{
+  public string? Name { get; set; }
   public string? Description { get; set; }
 }
