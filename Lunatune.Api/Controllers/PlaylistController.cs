@@ -13,6 +13,7 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
 {
   private readonly IPlaylistService _playlistService = playlistService;
 
+  // Gets user playlists has filtering
   [HttpGet]
   public async Task<ActionResult<IEnumerable<PlaylistWithUserInfo>>> GetUserPlaylists([FromQuery] string? searchTerm = null)
   {
@@ -21,6 +22,7 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
     return Ok(playlists);
   }
 
+  // Get all playlists with pagination and search
   [HttpGet("all")]
   public async Task<ActionResult<object>> GetAllPlaylists([FromQuery] string? searchTerm = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
   {
@@ -29,6 +31,7 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
     return Ok(new { playlists, totalPages });
   }
 
+  // Get a playlist by ID
   [HttpGet("{id}")]
   public async Task<ActionResult<PlaylistWithUserInfo>> GetPlaylist(Guid id)
   {
@@ -41,6 +44,7 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
     return Ok(playlist);
   }
 
+  // Create a new playlist
   [HttpPost]
   public async Task<ActionResult<Playlist>> CreatePlaylist([FromBody] CreatePlaylistRequest request)
   {
@@ -49,6 +53,7 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
     return CreatedAtAction(nameof(GetPlaylist), new { id = playlist.Id }, playlist);
   }
 
+  // Add a song to a playlist
   [HttpPost("{playlistId}/songs/{songId}")]
   public async Task<ActionResult> AddSongToPlaylist(Guid playlistId, Guid songId)
   {
@@ -61,6 +66,7 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
     return NoContent();
   }
 
+  // Remove a song from a playlist
   [HttpDelete("{playlistId}/songs/{songId}")]
   public async Task<ActionResult> RemoveSongFromPlaylist(Guid playlistId, Guid songId)
   {
@@ -73,6 +79,7 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
     return NoContent();
   }
 
+  // Delete a playlist
   [HttpDelete("{id}")]
   public async Task<ActionResult> DeletePlaylist(Guid id)
   {
@@ -83,6 +90,37 @@ public class PlaylistController(IPlaylistService playlistService) : ControllerBa
       return NotFound();
 
     return NoContent();
+  }
+
+  // Add a playlist to the library
+  [HttpPost("{playlistId}/library")]
+  public async Task<ActionResult> AddPlaylistToLibrary(Guid playlistId)
+  {
+    var userId = GetUserId();
+    var success = await _playlistService.AddPlaylistToLibraryAsync(playlistId, userId);
+    if (!success)
+      return NotFound();
+    return NoContent();
+  }
+
+  // Remove a playlist from the library
+  [HttpDelete("{playlistId}/library")]
+  public async Task<ActionResult> RemovePlaylistFromLibrary(Guid playlistId)
+  {
+    var userId = GetUserId();
+    var success = await _playlistService.RemovePlaylistFromLibraryAsync(playlistId, userId);
+    if (!success)
+      return NotFound();
+    return NoContent();
+  }
+
+  // Get or create the Liked Songs playlist
+  [HttpGet("liked")]
+  public async Task<ActionResult<Playlist>> GetOrCreateLikedSongsPlaylist()
+  {
+    var userId = GetUserId();
+    var playlist = await _playlistService.GetOrCreateLikedSongsPlaylistAsync(userId);
+    return Ok(playlist);
   }
 
   private Guid GetUserId()
