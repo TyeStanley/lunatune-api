@@ -50,23 +50,95 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
   }
 
   // Get a playlist by ID
-  public async Task<Playlist?> GetPlaylistByIdAsync(Guid playlistId)
+  public async Task<PlaylistWithUserInfo?> GetPlaylistByIdAsync(Guid playlistId, Guid? userId = null)
   {
-    return await _context.Playlists
+    var playlist = await _context.Playlists
         .Include(p => p.Songs)
             .ThenInclude(ps => ps.Song)
         .Include(p => p.Creator)
         .FirstOrDefaultAsync(p => p.Id == playlistId);
+
+    if (playlist == null)
+      return null;
+
+    return new PlaylistWithUserInfo
+    {
+      Id = playlist.Id,
+      Name = playlist.Name,
+      Description = playlist.Description,
+      CreatorId = playlist.CreatorId,
+      CreatedAt = playlist.CreatedAt,
+      UpdatedAt = playlist.UpdatedAt,
+      IsCreator = userId.HasValue && playlist.CreatorId == userId.Value,
+      Creator = playlist.Creator
+    };
   }
 
   // Get all playlists for a user (without songs)
-  public async Task<IEnumerable<Playlist>> GetUserPlaylistsAsync(Guid userId)
+  public async Task<IEnumerable<PlaylistWithUserInfo>> GetUserPlaylistsAsync(Guid userId, string? searchTerm = null)
   {
-    return await _context.Playlists
+    var query = _context.Playlists
         .Include(p => p.Creator)
-        .Where(p => p.CreatorId == userId || p.LibraryEntries.Any(le => le.UserId == userId))
+        .Where(p => p.CreatorId == userId || p.LibraryEntries.Any(le => le.UserId == userId));
+
+    if (!string.IsNullOrWhiteSpace(searchTerm))
+    {
+      query = query.Where(p =>
+          EF.Functions.ILike(p.Name, $"%{searchTerm}%"));
+    }
+
+    var playlists = await query
         .OrderBy(p => p.Name)
+        .Select(p => new PlaylistWithUserInfo
+        {
+          Id = p.Id,
+          Name = p.Name,
+          Description = p.Description,
+          CreatorId = p.CreatorId,
+          CreatedAt = p.CreatedAt,
+          UpdatedAt = p.UpdatedAt,
+          IsCreator = p.CreatorId == userId,
+          Creator = p.Creator
+        })
         .ToListAsync();
+
+    return playlists;
+  }
+
+  // Get all playlists with pagination and search
+  public async Task<(IEnumerable<PlaylistWithUserInfo> Playlists, int TotalPages)> GetAllPlaylistsAsync(string? searchTerm = null, int page = 1, int pageSize = 10, Guid? userId = null)
+  {
+    var query = _context.Playlists
+        .Include(p => p.Creator)
+        .AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(searchTerm))
+    {
+      query = query.Where(p =>
+          EF.Functions.ILike(p.Name, $"%{searchTerm}%"));
+    }
+
+    var totalCount = await query.CountAsync();
+    var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+    var playlists = await query
+        .OrderBy(p => p.Name)
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .Select(p => new PlaylistWithUserInfo
+        {
+          Id = p.Id,
+          Name = p.Name,
+          Description = p.Description,
+          CreatorId = p.CreatorId,
+          CreatedAt = p.CreatedAt,
+          UpdatedAt = p.UpdatedAt,
+          IsCreator = userId.HasValue && p.CreatorId == userId.Value,
+          Creator = p.Creator
+        })
+        .ToListAsync();
+
+    return (playlists, totalPages);
   }
 
   // Add a song to a playlist if you are the creator
