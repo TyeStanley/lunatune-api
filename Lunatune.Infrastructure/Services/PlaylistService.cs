@@ -10,6 +10,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
   private readonly ApplicationDbContext _context = context;
   private const string LIKED_SONGS_PLAYLIST_NAME = "Liked Songs";
 
+  // Get or create the Liked Songs playlist
   public async Task<Playlist> GetOrCreateLikedSongsPlaylistAsync(Guid userId)
   {
     var likedSongsPlaylist = await _context.Playlists
@@ -32,6 +33,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     return likedSongsPlaylist;
   }
 
+  // Create a new playlist
   public async Task<Playlist> CreatePlaylistAsync(Guid userId, string name, string? description = null)
   {
     var playlist = new Playlist
@@ -47,24 +49,27 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     return playlist;
   }
 
-  public async Task<Playlist?> GetPlaylistByIdAsync(Guid playlistId, Guid userId)
+  // Get a playlist by ID
+  public async Task<Playlist?> GetPlaylistByIdAsync(Guid playlistId)
   {
     return await _context.Playlists
         .Include(p => p.Songs)
             .ThenInclude(ps => ps.Song)
-        .FirstOrDefaultAsync(p => p.Id == playlistId && p.CreatorId == userId);
+        .Include(p => p.Creator)
+        .FirstOrDefaultAsync(p => p.Id == playlistId);
   }
 
+  // Get all playlists for a user (without songs)
   public async Task<IEnumerable<Playlist>> GetUserPlaylistsAsync(Guid userId)
   {
     return await _context.Playlists
-        .Include(p => p.Songs)
-            .ThenInclude(ps => ps.Song)
-        .Where(p => p.CreatorId == userId)
+        .Include(p => p.Creator)
+        .Where(p => p.CreatorId == userId || p.LibraryEntries.Any(le => le.UserId == userId))
         .OrderBy(p => p.Name)
         .ToListAsync();
   }
 
+  // Add a song to a playlist if you are the creator
   public async Task<bool> AddSongToPlaylistAsync(Guid playlistId, Guid songId, Guid userId)
   {
     var playlist = await _context.Playlists
@@ -98,6 +103,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     return true;
   }
 
+  // Remove a song from a playlist if you are the creator
   public async Task<bool> RemoveSongFromPlaylistAsync(Guid playlistId, Guid songId, Guid userId)
   {
     var playlistSong = await _context.PlaylistSongs
@@ -113,6 +119,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     return true;
   }
 
+  // Delete a playlist if you are the creator
   public async Task<bool> DeletePlaylistAsync(Guid playlistId, Guid userId)
   {
     var playlist = await _context.Playlists
@@ -122,6 +129,50 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
       return false;
 
     _context.Playlists.Remove(playlist);
+    await _context.SaveChangesAsync();
+
+    return true;
+  }
+
+  // Add a playlist to user's library
+  public async Task<bool> AddPlaylistToLibraryAsync(Guid playlistId, Guid userId)
+  {
+    // Check if playlist exists
+    var playlist = await _context.Playlists
+        .FirstOrDefaultAsync(p => p.Id == playlistId);
+
+    if (playlist == null)
+      return false;
+
+    // Check if already in library
+    var exists = await _context.UserLibraryPlaylists
+        .AnyAsync(ul => ul.PlaylistId == playlistId && ul.UserId == userId);
+
+    if (exists)
+      return true; // Already in library, not an error
+
+    var libraryEntry = new UserLibraryPlaylist
+    {
+      PlaylistId = playlistId,
+      UserId = userId
+    };
+
+    _context.UserLibraryPlaylists.Add(libraryEntry);
+    await _context.SaveChangesAsync();
+
+    return true;
+  }
+
+  // Remove a playlist from user's library
+  public async Task<bool> RemovePlaylistFromLibraryAsync(Guid playlistId, Guid userId)
+  {
+    var libraryEntry = await _context.UserLibraryPlaylists
+        .FirstOrDefaultAsync(ul => ul.PlaylistId == playlistId && ul.UserId == userId);
+
+    if (libraryEntry == null)
+      return false;
+
+    _context.UserLibraryPlaylists.Remove(libraryEntry);
     await _context.SaveChangesAsync();
 
     return true;

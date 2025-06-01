@@ -10,6 +10,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<SongLike> SongLikes { get; set; }
     public DbSet<Playlist> Playlists { get; set; }
     public DbSet<PlaylistSong> PlaylistSongs { get; set; }
+    public DbSet<UserLibraryPlaylist> UserLibraryPlaylists { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -106,9 +107,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasMaxLength(500);
 
             // Configure relationships
-            entity.HasOne(p => p.User)
-                .WithMany(u => u.Playlists)
-                .HasForeignKey(p => p.UserId)
+            entity.HasOne(p => p.Creator)
+                .WithMany(u => u.CreatedPlaylists)
+                .HasForeignKey(p => p.CreatorId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -134,6 +135,31 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasOne(ps => ps.Song)
                 .WithMany()
                 .HasForeignKey(ps => ps.SongId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // UserLibraryPlaylist entity
+        modelBuilder.Entity<UserLibraryPlaylist>(entity =>
+        {
+            entity.Property(ul => ul.Id)
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(ul => ul.AddedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            // Configure unique constraint for user-playlist combination
+            entity.HasIndex(ul => new { ul.UserId, ul.PlaylistId })
+                .IsUnique();
+
+            // Configure relationships
+            entity.HasOne(ul => ul.User)
+                .WithMany(u => u.LibraryPlaylists)
+                .HasForeignKey(ul => ul.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ul => ul.Playlist)
+                .WithMany(p => p.LibraryEntries)
+                .HasForeignKey(ul => ul.PlaylistId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
