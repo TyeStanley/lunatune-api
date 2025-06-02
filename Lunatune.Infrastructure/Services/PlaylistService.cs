@@ -169,26 +169,30 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     return (playlists, totalPages);
   }
 
-  // Add a song to a playlist if you are the creator
-  public async Task<bool> AddSongToPlaylistAsync(Guid playlistId, Guid songId, Guid userId)
+  // Add a song to a playlist if you are the creator or have it in your library
+  public async Task<AddSongToPlaylistResult> AddSongToPlaylistAsync(Guid playlistId, Guid songId, Guid userId)
   {
     var playlist = await _context.Playlists
-        .FirstOrDefaultAsync(p => p.Id == playlistId && p.CreatorId == userId);
+        .FirstOrDefaultAsync(p => p.Id == playlistId && (p.CreatorId == userId || p.LibraryEntries.Any(le => le.UserId == userId)));
 
     if (playlist == null)
-      return false;
+    {
+      return AddSongToPlaylistResult.PlaylistNotFound;
+    }
 
-    // Check if song already exists in playlist
     var exists = await _context.PlaylistSongs
         .AnyAsync(ps => ps.PlaylistId == playlistId && ps.SongId == songId);
 
-    if (exists)
-      return true;
 
-    // Get the highest position in the playlist
+    if (exists)
+    {
+      return AddSongToPlaylistResult.AlreadyExists;
+    }
+
     var maxPosition = await _context.PlaylistSongs
         .Where(ps => ps.PlaylistId == playlistId)
         .MaxAsync(ps => (int?)ps.Position) ?? -1;
+
 
     var playlistSong = new PlaylistSong
     {
@@ -200,7 +204,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     _context.PlaylistSongs.Add(playlistSong);
     await _context.SaveChangesAsync();
 
-    return true;
+    return AddSongToPlaylistResult.Success;
   }
 
   // Remove a song from a playlist if you are the creator

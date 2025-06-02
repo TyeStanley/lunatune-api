@@ -76,20 +76,23 @@ public class PlaylistController(IPlaylistService playlistService, IUserService u
 
   // Add a song to a playlist
   [HttpPost("{playlistId}/songs/{songId}")]
-  public async Task<ActionResult> AddSongToPlaylist(Guid playlistId, Guid songId)
+  public async Task<ActionResult<object>> AddSongToPlaylist(Guid playlistId, Guid songId)
   {
     var userId = await GetUserId();
     if (userId == null)
     {
-      return Unauthorized();
+      return Unauthorized(new { message = "User not authenticated." });
     }
 
-    var success = await _playlistService.AddSongToPlaylistAsync(playlistId, songId, userId.Value);
+    var result = await _playlistService.AddSongToPlaylistAsync(playlistId, songId, userId.Value);
 
-    if (!success)
-      return NotFound();
-
-    return NoContent();
+    return result switch
+    {
+      AddSongToPlaylistResult.Success => Ok(new { message = "Song added to playlist successfully." }),
+      AddSongToPlaylistResult.PlaylistNotFound => NotFound(new { message = "Playlist not found or you don't have access to it." }),
+      AddSongToPlaylistResult.AlreadyExists => Conflict(new { message = "Song is already in this playlist." }),
+      _ => StatusCode(500, new { message = "An unexpected error occurred." })
+    };
   }
 
   // Remove a song from a playlist
