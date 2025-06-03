@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "migrate:add": "dotnet ef migrations add AddUserLibraryPlaylist --project Lunatune.Infrastructure --startup-project Lunatune.Api",
+    "migrate:add": "dotnet ef migrations add AddPlaylistIsPublic --project Lunatune.Infrastructure --startup-project Lunatune.Api",
     "migrate:update": "dotnet ef database update --project Lunatune.Infrastructure",
     "docker:build": "docker build -f Lunatune.Api/Dockerfile -t lunatune-api .",
     "docker:run": "docker run --env-file .env -p 8080:8080 lunatune-api",

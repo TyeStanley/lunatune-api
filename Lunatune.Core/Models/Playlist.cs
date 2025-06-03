@@ -8,6 +8,7 @@ public class Playlist
   public required Guid CreatorId { get; set; }
   public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
   public DateTime? UpdatedAt { get; set; }
+  public bool IsPublic { get; set; } = false;
 
   // Navigation properties
   public User Creator { get; set; } = null!;

@@ -70,7 +70,7 @@ public class PlaylistController(IPlaylistService playlistService, IUserService u
       return Unauthorized();
     }
 
-    var playlist = await _playlistService.CreatePlaylistAsync(userId.Value, request.Name, request.Description);
+    var playlist = await _playlistService.CreatePlaylistAsync(userId.Value, request.Name, request.Description, request.IsPublic);
     return Ok(playlist);
   }
 
@@ -188,7 +188,7 @@ public class PlaylistController(IPlaylistService playlistService, IUserService u
       return Unauthorized();
     }
 
-    var playlist = await _playlistService.EditPlaylistAsync(id, request.Name, request.Description, userId.Value);
+    var playlist = await _playlistService.EditPlaylistAsync(id, request.Name, request.Description, request.IsPublic, userId.Value);
 
     if (playlist == null)
       return NotFound();
@@ -213,10 +213,12 @@ public class CreatePlaylistRequest
 {
   public required string Name { get; set; }
   public string? Description { get; set; }
+  public bool IsPublic { get; set; } = false;
 }
 
 public class EditPlaylistRequest
 {
   public string? Name { get; set; }
   public string? Description { get; set; }
+  public bool? IsPublic { get; set; }
 }

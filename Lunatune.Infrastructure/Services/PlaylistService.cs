@@ -34,13 +34,14 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
   }
 
   // Create a new playlist
-  public async Task<Playlist> CreatePlaylistAsync(Guid userId, string name, string? description = null)
+  public async Task<Playlist> CreatePlaylistAsync(Guid userId, string name, string? description = null, bool isPublic = false)
   {
     var playlist = new Playlist
     {
       Name = name,
       Description = description,
-      CreatorId = userId
+      CreatorId = userId,
+      IsPublic = isPublic
     };
 
     _context.Playlists.Add(playlist);
@@ -65,7 +66,8 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
         .Include(p => p.Songs)
             .ThenInclude(ps => ps.Song)
         .Include(p => p.Creator)
-        .FirstOrDefaultAsync(p => p.Id == playlistId);
+        .FirstOrDefaultAsync(p => p.Id == playlistId &&
+            (p.IsPublic || (userId.HasValue && p.CreatorId == userId.Value)));
 
     if (playlist == null)
       return null;
@@ -106,14 +108,16 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
         CreatedAt = likedSongsPlaylist.CreatedAt,
         UpdatedAt = likedSongsPlaylist.UpdatedAt,
         IsCreator = true,
+        IsPublic = likedSongsPlaylist.IsPublic,
         Creator = new CreatorInfoDto { Name = user.Name }
       };
     }
 
+    // Get playlists from user's library and created playlists
     var query = _context.Playlists
         .Include(p => p.Creator)
-        .Where(p => p.CreatorId == userId ||
-                    _context.UserLibraryPlaylists.Any(ul =>
+        .Where(p => p.CreatorId == userId || // User's created playlists
+                    _context.UserLibraryPlaylists.Any(ul => // User's library playlists
                         ul.UserId == userId &&
                         ul.PlaylistId == p.Id))
         .Where(p => p.Name != LIKED_SONGS_PLAYLIST_NAME);
@@ -135,6 +139,8 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
           CreatedAt = p.CreatedAt,
           UpdatedAt = p.UpdatedAt,
           IsCreator = p.CreatorId == userId,
+          IsInLibrary = p.CreatorId != userId, // If not creator, it must be in library
+          IsPublic = p.IsPublic,
           Creator = new CreatorInfoDto { Name = p.Creator.Name }
         })
         .ToListAsync();
@@ -152,6 +158,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     var query = _context.Playlists
         .Include(p => p.Creator)
         .Where(p => p.Name != LIKED_SONGS_PLAYLIST_NAME)
+        .Where(p => p.IsPublic || (userId.HasValue && p.CreatorId == userId.Value))
         .AsQueryable();
 
     if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -178,6 +185,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
           IsCreator = userId.HasValue && p.CreatorId == userId.Value,
           IsInLibrary = userId.HasValue && _context.UserLibraryPlaylists
             .Any(ul => ul.UserId == userId.Value && ul.PlaylistId == p.Id),
+          IsPublic = p.IsPublic,
           Creator = new CreatorInfoDto { Name = p.Creator.Name }
         })
         .ToListAsync();
@@ -305,7 +313,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
   }
 
   // Edit a playlist
-  public async Task<Playlist?> EditPlaylistAsync(Guid playlistId, string? name, string? description, Guid userId)
+  public async Task<Playlist?> EditPlaylistAsync(Guid playlistId, string? name, string? description, bool? isPublic, Guid userId)
   {
     var playlist = await _context.Playlists
         .FirstOrDefaultAsync(p => p.Id == playlistId && p.CreatorId == userId);
@@ -318,6 +326,9 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
 
     if (description != null && description != playlist.Description)
       playlist.Description = description;
+
+    if (isPublic.HasValue && isPublic.Value != playlist.IsPublic)
+      playlist.IsPublic = isPublic.Value;
 
     await _context.SaveChangesAsync();
     return playlist;
