@@ -46,6 +46,15 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     _context.Playlists.Add(playlist);
     await _context.SaveChangesAsync();
 
+    var libraryEntry = new UserLibraryPlaylist
+    {
+      PlaylistId = playlist.Id,
+      UserId = userId
+    };
+
+    _context.UserLibraryPlaylists.Add(libraryEntry);
+    await _context.SaveChangesAsync();
+
     return playlist;
   }
 
@@ -103,7 +112,10 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
 
     var query = _context.Playlists
         .Include(p => p.Creator)
-        .Where(p => p.CreatorId == userId || p.LibraryEntries.Any(le => le.UserId == userId))
+        .Where(p => p.CreatorId == userId ||
+                    _context.UserLibraryPlaylists.Any(ul =>
+                        ul.UserId == userId &&
+                        ul.PlaylistId == p.Id))
         .Where(p => p.Name != LIKED_SONGS_PLAYLIST_NAME);
 
     if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -130,6 +142,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     // Prepend the Liked Songs playlist if it should be included
     if (likedSongsDto != null)
       playlists.Insert(0, likedSongsDto);
+
     return playlists;
   }
 
@@ -138,6 +151,7 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
   {
     var query = _context.Playlists
         .Include(p => p.Creator)
+        .Where(p => p.Name != LIKED_SONGS_PLAYLIST_NAME)
         .AsQueryable();
 
     if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -162,6 +176,8 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
           CreatedAt = p.CreatedAt,
           UpdatedAt = p.UpdatedAt,
           IsCreator = userId.HasValue && p.CreatorId == userId.Value,
+          IsInLibrary = userId.HasValue && _context.UserLibraryPlaylists
+            .Any(ul => ul.UserId == userId.Value && ul.PlaylistId == p.Id),
           Creator = new CreatorInfoDto { Name = p.Creator.Name }
         })
         .ToListAsync();
@@ -232,6 +248,12 @@ public class PlaylistService(ApplicationDbContext context) : IPlaylistService
     if (playlist == null)
       return false;
 
+    // Delete all library entries for this playlist
+    var libraryEntries = await _context.UserLibraryPlaylists
+        .Where(ul => ul.PlaylistId == playlistId)
+        .ToListAsync();
+
+    _context.UserLibraryPlaylists.RemoveRange(libraryEntries);
     _context.Playlists.Remove(playlist);
     await _context.SaveChangesAsync();
 

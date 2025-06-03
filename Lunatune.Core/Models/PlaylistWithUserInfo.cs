@@ -8,7 +8,9 @@ public class PlaylistWithUserInfo
   public required Guid CreatorId { get; set; }
   public DateTime CreatedAt { get; set; }
   public DateTime? UpdatedAt { get; set; }
+  public bool IsPublic { get; set; }
   public bool IsCreator { get; set; }
+  public bool IsInLibrary { get; set; }
 
   // Navigation properties
   public CreatorInfoDto? Creator { get; set; }
