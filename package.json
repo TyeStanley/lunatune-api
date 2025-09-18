@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "docker:run": "docker run --env-file .env -p 8080:8080 lunatune-api",
-    "docker:dev": "docker run --env-file .env -e ASPNETCORE_ENVIRONMENT=Development -p 8080:8080 lunatune-api"
+    "docker:up": "docker-compose up --build",
+    "docker:down": "docker-compose down"
   },
   "repository": {
     "type": "git",
