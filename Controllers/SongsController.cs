@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Services;
-using Models;
+using Lunatune.Services;
+using Lunatune.Models;
 using System.Security.Claims;
 
-namespace Controllers;
+namespace Lunatune.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

@@ -19,16 +19,16 @@ RUN apt-get update \
     clang zlib1g-dev
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Lunatune.Api/Lunatune.Api.csproj", "Lunatune.Api/"]
+COPY ["Lunatune.csproj", "Lunatune.csproj"]
 RUN dotnet restore "./Lunatune.Api/Lunatune.Api.csproj"
 COPY . .
-WORKDIR "/src/Lunatune.Api"
-RUN dotnet build "./Lunatune.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/Lunatune"
+RUN dotnet build "./Lunatune.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Lunatune.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true
+RUN dotnet publish "./Lunatune.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true
 
 # This stage is used as the base for the final stage when launching from VS to support debugging in regular mode (Default when not using the Debug configuration)
 FROM base AS aotdebug
@@ -44,4 +44,4 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 EXPOSE 8080
 COPY --from=publish /app/publish .
-ENTRYPOINT ["./Lunatune.Api"]
+ENTRYPOINT ["./Lunatune"]

@@ -1,7 +1,7 @@
-﻿using Models;
+﻿using Lunatune.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Data;
+namespace Lunatune.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {

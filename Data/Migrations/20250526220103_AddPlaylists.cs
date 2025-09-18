@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Data.Migrations
+namespace Lunatune.Data.Migrations
 {
     /// <inheritdoc />
     public partial class AddPlaylists : Migration

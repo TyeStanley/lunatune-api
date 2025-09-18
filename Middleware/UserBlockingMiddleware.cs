@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
 
-namespace Middleware;
+namespace Lunatune.Middleware;
 
 public class UserBlockingMiddleware(RequestDelegate next)
 {

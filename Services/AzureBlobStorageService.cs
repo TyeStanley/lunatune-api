@@ -1,8 +1,7 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Sas;
-using Microsoft.Extensions.Configuration;
 
-namespace Services;
+namespace Lunatune.Services;
 
 public class AzureBlobStorageService
 {

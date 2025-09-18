@@ -1,4 +1,4 @@
-namespace Models;
+namespace Lunatune.Models;
 
 public class SongLike
 {

@@ -1,8 +1,8 @@
-using Models;
-using Data;
+using Lunatune.Models;
+using Lunatune.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace Services;
+namespace Lunatune.Services;
 
 public class PlaylistService(ApplicationDbContext context)
 {

@@ -1,17 +1,16 @@
 using Microsoft.EntityFrameworkCore;
-using Data;
-using Services;
+using Lunatune.Data;
+using Lunatune.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
-using Middleware;
+using Lunatune.Middleware;
 using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Gets environment secrets
 var env = builder.Environment.EnvironmentName;
-Console.WriteLine($"Running in {env} environment");
 
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.ConfigureKestrel(options =>
